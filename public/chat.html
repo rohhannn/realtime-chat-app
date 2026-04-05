@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ChatSphere</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h2>💬 ChatSphere</h2>
+    <div class="user-info">
+      <span id="currentUser"></span>
+      <a href="/logout">Logout</a>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <input id="search" placeholder="🔍 Search users...">
+
+      <h4>Online Users</h4>
+      <ul id="users"></ul>
+    </div>
+
+    <!-- CHAT -->
+    <div class="chat">
+
+      <div id="messages"></div>
+
+      <div id="typing"></div>
+
+      <div class="input-box">
+        <input id="msg" placeholder="Type message...">
+        <button onclick="sendMessage()">➤</button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/chat.js"></script>
+
+</body>
+</html>
