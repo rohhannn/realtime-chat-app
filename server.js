@@ -15,61 +15,81 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static("public"));
 
+// ✅ SESSION FIX (important for deployment)
 app.use(session({
   secret: "secret123",
   resave: false,
-  saveUninitialized: true
+  saveUninitialized: true,
+  cookie: { secure: false } // Render safe
 }));
 
-// ================= FAKE DATABASE =================
+// ================= TEMP DATABASE =================
 
 let users = [];
 let onlineUsers = [];
 
 // ================= ROUTES =================
 
+// Home
 app.get("/", (req, res) => {
   if (!req.session.user) return res.redirect("/login");
   res.sendFile(path.join(__dirname, "public", "chat.html"));
 });
 
+// Login page
 app.get("/login", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "login.html"));
 });
 
+// Signup page
 app.get("/signup", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "signup.html"));
 });
 
 // SIGNUP
 app.post("/signup", async (req, res) => {
-  console.log("Signup:", req.body);
-
   const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.send("All fields required");
+  }
 
   const existing = users.find(u => u.username === username);
   if (existing) return res.send("User already exists");
 
   const hashed = await bcrypt.hash(password, 10);
-  users.push({ username, password: hashed });
+
+  users.push({
+    username,
+    password: hashed
+  });
+
+  console.log("Users:", users);
 
   res.redirect("/login");
 });
 
 // LOGIN
 app.post("/login", async (req, res) => {
-  console.log("Login:", req.body);
-
   const { username, password } = req.body;
 
   const user = users.find(u => u.username === username);
 
-  if (user && await bcrypt.compare(password, user.password)) {
-    req.session.user = username;
-    res.redirect("/");
-  } else {
-    res.send("Invalid login");
-  }
+  if (!user) return res.send("User not found");
+
+  const match = await bcrypt.compare(password, user.password);
+
+  if (!match) return res.send("Wrong password");
+
+  req.session.user = username;
+
+  res.redirect("/");
+});
+
+// LOGOUT
+app.get("/logout", (req, res) => {
+  req.session.destroy();
+  res.redirect("/login");
 });
 
 // ================= SOCKET =================
@@ -80,22 +100,26 @@ io.on("connection", (socket) => {
   socket.on("join", (username) => {
     socket.username = username;
 
-    onlineUsers.push(username);
+    // Prevent duplicate users
+    if (!onlineUsers.includes(username)) {
+      onlineUsers.push(username);
+    }
+
     io.emit("onlineUsers", onlineUsers);
 
     io.emit("message", {
       user: "System",
-      text: username + " joined",
+      text: `${username} joined the chat`,
       time: new Date().toLocaleTimeString()
     });
   });
 
   socket.on("typing", () => {
-    socket.broadcast.emit("typing", socket.username + " is typing...");
+    socket.broadcast.emit("typing", `${socket.username} is typing...`);
   });
 
   socket.on("message", (msg) => {
-    console.log("Message:", msg);
+    if (!msg || !socket.username) return;
 
     const data = {
       user: socket.username,
@@ -114,7 +138,7 @@ io.on("connection", (socket) => {
     if (socket.username) {
       io.emit("message", {
         user: "System",
-        text: socket.username + " left",
+        text: `${socket.username} left the chat`,
         time: new Date().toLocaleTimeString()
       });
     }
