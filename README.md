@@ -6,7 +6,7 @@ A modern, full-stack real-time chat application built using **Node.js, Express, 
 
 ## 🚀 Live Demo
 
-🌐 **Live App:** https://your-render-link.onrender.com
+🌐 **Live App:** https://chatsphere-app-phqm.onrender.com
 📦 **GitHub Repository:** https://github.com/rohhannn/realtime-chat-app
 
 ---
